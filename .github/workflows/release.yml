@@ -1,0 +1,29 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install MinGW for Windows cross-compile
+        run: sudo apt-get update && sudo apt-get install -y mingw-w64
+
+      - name: Build Linux binary
+        run: gcc -Wall -Wextra -O2 main.c -o brainfuck-linux-x86_64
+
+      - name: Build Windows binary
+        run: x86_64-w64-mingw32-gcc -Wall -Wextra -O2 main.c -o brainfuck-windows-x86_64.exe
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            brainfuck-linux-x86_64
+            brainfuck-windows-x86_64.exe
