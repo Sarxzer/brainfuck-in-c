@@ -2,41 +2,90 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 int main(int argc, char *argv[]) {
-    if (argc < 2) {
+    if (argc >= 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
         printf("Sarxzer's Brainfuck Interpreter\n");
         printf("Usage: %s <filename.bf>\n", argv[0]);
+        printf("       %s -t \"<brainfuck code>\"\n", argv[0]);
         return 1;
     }
-
     int pointer = 0;
     unsigned char tape [30000];
     int ipointer;
 
     memset(tape, 0, sizeof(tape));
 
-    FILE *fp = fopen(argv[1], "r");
+    long size;
+    char *buffer;
 
-    if (fp==NULL) {
-        printf("Couldn't open file\n");
+    if (argc >= 2 && strcmp(argv[1], "-t") == 0) {
+        if (argc < 3) {
+            printf("Please provide code after -t\n");
+            return 1;
+        }
+        size = strlen(argv[2]);
+
+        buffer = malloc(size + 1);
+        if (buffer == NULL) {
+            printf("Memory allocation failed\n");
+            return 1;
+        }
+        strcpy(buffer, argv[2]);
+
+        buffer[size] = '\0';
+    } else if (argc >= 2) {
+        FILE *fp = fopen(argv[1], "r");
+
+        if (fp==NULL) {
+            printf("Couldn't open file\n");
+            return 1;
+        }
+
+        fseek(fp, 0, SEEK_END);
+        size = ftell(fp);
+        fseek(fp, 0, SEEK_SET);
+
+        buffer = malloc(size + 1);
+        if (buffer == NULL) {
+            printf("Memory allocation failed\n");
+            return 1;
+        }
+
+        fread(buffer, 1, size, fp);
+        buffer[size] = '\0';
+
+        fclose(fp);
+    } else if (!isatty(fileno(stdin))) {
+        long capacity = 1024;  // start smaller, we'll grow as needed
+        buffer = malloc(capacity);
+        if (buffer == NULL) {
+            printf("Memory allocation failed\n");
+            return 1;
+        }
+        size = 0;
+        
+        int ch;
+        while ((ch = getchar()) != EOF) {
+            if (size >= capacity) {
+                capacity *= 2;
+                buffer = realloc(buffer, capacity);
+                if (buffer == NULL) {
+                    printf("Memory allocation failed\n");
+                    return 1;
+                }
+            }
+            buffer[size] = ch;
+            size++;
+        }
+        buffer[size] = '\0';
+    } else {
+        printf("Sarxzer's Brainfuck Interpreter\n");
+        printf("Usage: %s <filename.bf>\n", argv[0]);
+        printf("       %s -t \"<brainfuck code>\"\n", argv[0]);
         return 1;
     }
-
-    fseek(fp, 0, SEEK_END);
-    long size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-
-    char *buffer = malloc(size + 1);
-    if (buffer == NULL) {
-        printf("Memory allocation failed\n");
-        return 1;
-    }
-
-    fread(buffer, 1, size, fp);
-    buffer[size] = '\0';
-
-    fclose(fp);
 
     // printf("%c\n", buffer[0]);
 
