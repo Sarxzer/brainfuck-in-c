@@ -1,3 +1,5 @@
 /.vscode
 /main
-/test.bf
+/examples/test.bf
+/brainfuck
+/brainfuck.exe
